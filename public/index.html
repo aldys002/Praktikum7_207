@@ -22,30 +22,16 @@
       box-shadow: 0 4px 25px rgba(0,0,0,0.3);
       padding: 30px;
       width: 100%;
-      max-width: 450px;
+      max-width: 600px;
     }
     .form-control {
       background-color: #0d1b2a;
       border: 1px solid #415a77;
       color: #fff;
     }
-    .form-control:focus {
-      background-color: #0d1b2a;
-      border-color: #00b4d8;
-      box-shadow: 0 0 0 0.25rem rgba(0,180,216,0.25);
-      color: #fff;
-    }
-    .btn-primary {
-      background-color: #00b4d8;
-      border: none;
-    }
-    .btn-primary:hover {
-      background-color: #0096c7;
-    }
-    .btn-outline-light:hover {
-      background-color: #00b4d8;
-      color: #fff;
-    }
+    .btn-primary { background-color: #00b4d8; border: none; }
+    .btn-primary:hover { background-color: #0096c7; }
+    .table { color: #fff; }
   </style>
 </head>
 <body>
@@ -65,53 +51,80 @@
         </div>
       </div>
 
-      <button type="button" class="btn btn-primary w-100" onclick="generateKey()">Generate API Key</button>
+      <button type="button" class="btn btn-primary w-100 mb-4" onclick="generateKey()">Generate API Key</button>
     </form>
+
+    <h5 class="mb-3">📋 Riwayat API Key</h5>
+    <table class="table table-dark table-striped" id="keyTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Keyword</th>
+          <th>API Key</th>
+          <th>Dibuat</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
   <script>
-  async function generateKey() {
-    const keyword = document.getElementById('keyword').value.trim();
-    const apiKeyInput = document.getElementById('apikey');
+    async function generateKey() {
+      const keyword = document.getElementById('keyword').value.trim();
+      const apiKeyInput = document.getElementById('apikey');
 
-    if (!keyword) {
-      alert('Masukkan kata kunci terlebih dahulu!');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/generate-key', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyword })
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        alert(error.error || 'Gagal membuat API key');
+      if (!keyword) {
+        alert('Masukkan kata kunci terlebih dahulu!');
         return;
       }
 
-      const data = await response.json();
-      apiKeyInput.value = data.apiKey;
-    } catch (err) {
-      console.error(err);
-      alert('Terjadi kesalahan saat menghubungi server');
-    }
-  }
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let key = '';
+      for (let i = 0; i < 32; i++) {
+        key += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
 
-  function copyKey() {
-    const apiKeyInput = document.getElementById('apikey');
-    if (!apiKeyInput.value) {
-      alert('Belum ada API key yang dibuat!');
-      return;
-    }
-    apiKeyInput.select();
-    apiKeyInput.setSelectionRange(0, 99999);
-    document.execCommand('copy');
-    alert('API key berhasil disalin!');
-  }
-</script>
+      apiKeyInput.value = key;
 
+      const res = await fetch('/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyword, api_key: key })
+      });
+      const data = await res.json();
+      alert(data.message);
+      loadKeys();
+    }
+
+    function copyKey() {
+      const apiKeyInput = document.getElementById('apikey');
+      if (!apiKeyInput.value) {
+        alert('Belum ada API key yang dibuat!');
+        return;
+      }
+      apiKeyInput.select();
+      document.execCommand('copy');
+      alert('API key berhasil disalin!');
+    }
+
+    async function loadKeys() {
+      const res = await fetch('/api/keys');
+      const data = await res.json();
+      const tbody = document.querySelector('#keyTable tbody');
+      tbody.innerHTML = '';
+      data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.id}</td>
+          <td>${row.keyword}</td>
+          <td>${row.api_key}</td>
+          <td>${new Date(row.created_at).toLocaleString()}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    loadKeys();
+  </script>
 </body>
 </html>
