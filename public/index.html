@@ -52,25 +52,44 @@
   <div class="card text-center">
     <h3 class="mb-4">🔑 API Key Generator</h3>
     <form>
-      <div class="mb-3">
+      <!-- Input nama / keterangan -->
+      <div class="mb-3 text-start">
+        <label for="username" class="form-label">Nama / Keterangan</label>
+        <input type="text" id="username" class="form-control" placeholder="Masukkan nama Anda...">
+      </div>
+
+      <!-- Hasil API key -->
+      <div class="mb-3 text-start">
         <label for="apikey" class="form-label">API Key</label>
         <div class="input-group">
-          <input type="text" id="apikey" class="form-control" readonly placeholder="Klik Generate untuk membuat API Key">
+          <input type="text" id="apikey" class="form-control" readonly placeholder="Klik Generate setelah isi nama">
           <button type="button" class="btn btn-outline-light" onclick="copyKey()">Copy</button>
         </div>
       </div>
+
+      <!-- Tombol generate -->
       <button type="button" class="btn btn-primary w-100" onclick="generateKey()">Generate API Key</button>
     </form>
   </div>
 
   <script>
     function generateKey() {
+      const userInput = document.getElementById('username').value.trim();
+      const apiKeyField = document.getElementById('apikey');
+
+      if (!userInput) {
+        alert('Silakan isi nama atau keterangan terlebih dahulu!');
+        return;
+      }
+
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
       let key = '';
       for (let i = 0; i < 32; i++) {
         key += chars.charAt(Math.floor(Math.random() * chars.length));
       }
-      document.getElementById('apikey').value = key;
+
+      // Gabungkan nama + key (misalnya agar unik)
+      apiKeyField.value = `${userInput}_${key}`;
     }
 
     function copyKey() {
