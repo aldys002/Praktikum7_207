@@ -3,49 +3,69 @@ const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const path = require('path');
+const crypto = require('crypto');
+
 const app = express();
 
+// Middleware
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname))); // biar index.html bisa diakses
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public'))); // folder public
 
-// 🔗 Koneksi ke MySQL Workbench
+// Koneksi ke MySQL
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
+  port: process.env.DB_PORT || 3307,
   user: process.env.DB_USER,
-  password: process.env.DB_PASS || '',
-  database: process.env.DB_NAME
+  password: process.env.DB_PASS || Cokiber_2893,
+  database: process.env.DB_NAME || apikey_db,
 });
 
 db.connect(err => {
-  if (err) console.error('❌ Gagal konek DB:', err);
-  else console.log('✅ Terhubung ke MySQL Workbench');
-});
-
-// 🧠 Simpan API key
-app.post('/api/save', (req, res) => {
-  const { keyword, api_key } = req.body;
-  if (!keyword || !api_key) {
-    return res.status(400).json({ message: 'Keyword dan API key wajib diisi!' });
+  if (err) {
+    console.error('❌ Gagal konek ke MySQL:', err);
+  } else {
+    console.log('✅ Terhubung ke MySQL Workbench');
   }
+});
 
+// Route utama untuk tampilkan halaman index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Generate API Key dan simpan ke DB
+app.post('/api/generate', (req, res) => {
+  const { keyword } = req.body;
+  if (!keyword) return res.status(400).json({ message: 'Keyword wajib diisi!' });
+
+  const apiKey = crypto.randomBytes(16).toString('hex');
   const sql = 'INSERT INTO api_keys (keyword, api_key) VALUES (?, ?)';
-  db.query(sql, [keyword, api_key], (err, result) => {
+
+  db.query(sql, [keyword, apiKey], (err) => {
     if (err) {
-      console.error('Gagal simpan ke DB:', err);
-      return res.status(500).json({ message: 'Error menyimpan ke database' });
+      console.error('❌ Gagal menyimpan ke DB:', err);
+      return res.status(500).json({ message: 'Gagal menyimpan ke database' });
     }
-    res.json({ message: '✅ API key berhasil disimpan', id: result.insertId });
+    res.json({ message: '✅ API key berhasil disimpan', api_key: apiKey });
   });
 });
 
-// 📋 Ambil semua data API key
-app.get('/api/keys', (req, res) => {
-  db.query('SELECT * FROM api_keys ORDER BY id DESC', (err, rows) => {
-    if (err) return res.status(500).json({ message: 'Gagal ambil data dari DB' });
-    res.json(rows);
+// Validasi API Key via Postman
+app.post('/api/validate', (req, res) => {
+  const { api_key } = req.body;
+  if (!api_key) return res.status(400).json({ message: 'API key wajib diisi!' });
+
+  db.query('SELECT * FROM api_keys WHERE api_key = ?', [api_key], (err, rows) => {
+    if (err) return res.status(500).json({ message: 'Gagal cek ke database' });
+    if (rows.length > 0) {
+      res.json({ valid: true, keyword: rows[0].keyword });
+    } else {
+      res.json({ valid: false });
+    }
   });
 });
 
-// 🚀 Jalankan server
+// Jalankan server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server jalan di http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server jalan di http://localhost:${PORT}`));
