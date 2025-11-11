@@ -51,34 +51,31 @@
 <body>
   <div class="card text-center">
     <h3 class="mb-4">🔑 API Key Generator</h3>
-    <form>
-      <!-- Input nama / keterangan -->
-      <div class="mb-3 text-start">
-        <label for="username" class="form-label">Nama / Keterangan</label>
-        <input type="text" id="username" class="form-control" placeholder="Masukkan nama Anda...">
+    <form onsubmit="return false;">
+      <div class="mb-3">
+        <label for="keyword" class="form-label">Masukkan Kata Kunci</label>
+        <input type="text" id="keyword" class="form-control" placeholder="Contoh: admin">
       </div>
 
-      <!-- Hasil API key -->
-      <div class="mb-3 text-start">
+      <div class="mb-3">
         <label for="apikey" class="form-label">API Key</label>
         <div class="input-group">
-          <input type="text" id="apikey" class="form-control" readonly placeholder="Klik Generate setelah isi nama">
+          <input type="text" id="apikey" class="form-control" readonly placeholder="Klik Generate untuk membuat API Key">
           <button type="button" class="btn btn-outline-light" onclick="copyKey()">Copy</button>
         </div>
       </div>
 
-      <!-- Tombol generate -->
       <button type="button" class="btn btn-primary w-100" onclick="generateKey()">Generate API Key</button>
     </form>
   </div>
 
   <script>
     function generateKey() {
-      const userInput = document.getElementById('username').value.trim();
-      const apiKeyField = document.getElementById('apikey');
-
-      if (!userInput) {
-        alert('Silakan isi nama atau keterangan terlebih dahulu!');
+      const keyword = document.getElementById('keyword').value.trim();
+      const apiKeyInput = document.getElementById('apikey');
+      
+      if (!keyword) {
+        alert('Masukkan kata kunci terlebih dahulu!');
         return;
       }
 
@@ -88,8 +85,8 @@
         key += chars.charAt(Math.floor(Math.random() * chars.length));
       }
 
-      // Gabungkan nama + key (misalnya agar unik)
-      apiKeyField.value = `${userInput}_${key}`;
+      // API key hasilnya tidak menyertakan kata kunci
+      apiKeyInput.value = key;
     }
 
     function copyKey() {
