@@ -70,36 +70,48 @@
   </div>
 
   <script>
-    function generateKey() {
-      const keyword = document.getElementById('keyword').value.trim();
-      const apiKeyInput = document.getElementById('apikey');
-      
-      if (!keyword) {
-        alert('Masukkan kata kunci terlebih dahulu!');
+  async function generateKey() {
+    const keyword = document.getElementById('keyword').value.trim();
+    const apiKeyInput = document.getElementById('apikey');
+
+    if (!keyword) {
+      alert('Masukkan kata kunci terlebih dahulu!');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/generate-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyword })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        alert(error.error || 'Gagal membuat API key');
         return;
       }
 
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      let key = '';
-      for (let i = 0; i < 32; i++) {
-        key += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-
-      // API key hasilnya tidak menyertakan kata kunci
-      apiKeyInput.value = key;
+      const data = await response.json();
+      apiKeyInput.value = data.apiKey;
+    } catch (err) {
+      console.error(err);
+      alert('Terjadi kesalahan saat menghubungi server');
     }
+  }
 
-    function copyKey() {
-      const apiKeyInput = document.getElementById('apikey');
-      if (!apiKeyInput.value) {
-        alert('Belum ada API key yang dibuat!');
-        return;
-      }
-      apiKeyInput.select();
-      apiKeyInput.setSelectionRange(0, 99999);
-      document.execCommand('copy');
-      alert('API key berhasil disalin!');
+  function copyKey() {
+    const apiKeyInput = document.getElementById('apikey');
+    if (!apiKeyInput.value) {
+      alert('Belum ada API key yang dibuat!');
+      return;
     }
-  </script>
+    apiKeyInput.select();
+    apiKeyInput.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+    alert('API key berhasil disalin!');
+  }
+</script>
+
 </body>
 </html>
